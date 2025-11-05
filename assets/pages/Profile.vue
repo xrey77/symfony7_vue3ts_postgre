@@ -1,0 +1,409 @@
+<template>
+    <div class="card card-width bs-info-border-subtle">
+      <div class="card-header bg-success text-light">
+        <strong>USER'S PROFILE NO.&nbsp; {{ userid }}</strong>
+      </div>
+      <div class="card-body bg-warning">    
+        <form id="profileForm" @submit.prevent="submitProfile" enctype="multipart/form-data" method="POST">
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <input type="text" required v-model="firstname" name="firstname" class="form-control"  autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" required v-model="lastname" name="lastname" class="form-control" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" v-model="email" name="email" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" required v-model="mobile" name="mobile" class="form-control" autocomplete="off">
+                    </div>
+    
+                </div>
+                <div class="col">
+                    <img id="userpic" class="usr" v-bind:src="profilepic" alt=""/>
+                    <div class="mb-3">
+                        <input type="file" @change="changePicture" class="form-control form-control-sm mt-3" accept=".png, .jpg, .jpeg, .gif"  />
+                    </div>
+    
+                </div>
+            </div>
+    
+            <div class="row">
+                <div class="col">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input cb-border" v-model="chgPwd" @change="checkboxPassword" />
+                        <label class="form-check-label" for="chgPwd">
+                            Change Password
+                        </label>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-check">
+                        <input class="form-check-input cb-border" type="checkbox" v-model="chkMfa" @change="checkboxMFA" />
+                        <label class="form-check-label" for="chkMfa">
+                            2-Factor Authenticator
+                        </label>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row">
+    
+                <div class="col">
+                    <div v-if="chgPwd" id="cpwd">
+                        <div class="mb-3">
+                            <input type="password"  v-model="password" class="form-control pwd" placeholder="enter new Password" autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" v-model="confpassword" class="form-control pwd" placeholder="confirm new Password" autocomplete="off">
+                        </div>
+                        <button @click="changePassword" type="button" class="btn btn-primary">change password</button>
+                    </div>
+                    <div v-if="chkMfa" id="mfa1">
+                        <img class="qrcode1" v-bind:src="qrcodeurl" alt="qrcodeurl"/>
+                    </div>
+                    
+                </div>
+                <div class="col">
+
+                        <div v-if="chkMfa" id="mfa2">
+                            <p id="qrcode-cap1" class='text-danger'><strong>Requirements</strong></p>
+                            <p id="qrcode-cap2">You need to install <strong>Google or Microsoft Authenticator</strong> in your Mobile Phone, once installed, click Enable Button below, and <strong>SCAN QR CODE</strong>, next time you login, another dialog window will appear, then enter the <strong>OTP CODE</strong> from your Mobile Phone in order for you to login.</p>
+                            <div class="row">
+                                <div class="col btn-1">
+                                    <button @click="enableMFA" type="button" class="btn btn-primary qrcode-cap3">Enable</button>
+                                </div>
+                                <div class="col col-3 btn-2">
+                                    <button @click="disableMFA" type="button" class="btn btn-secondary qrcode-cap3">Disable</button>
+                                </div>
+                            </div>
+    
+                        </div>
+    
+                </div>
+            </div>
+            <div v-if="showSave === false">
+                <button id="save" type="submit" class="btn btn-success">save</button>
+            </div>
+        </form>
+      </div>
+      <div class="card-footer">
+        <div class="w-100 text-left text-danger">{{ profileMsg }}</div>
+      </div>
+      <div v-if="chkMfa">
+        <Footer/>
+      </div>
+      <div v-if="!chkMfa" class="fixed-bottom">
+        <Footer/>
+      </div>
+
+    </div>
+    </template>
+    
+    <style scoped>
+        .usr {
+            width: 150px!important;
+            height: 150px!important;
+        }
+        .card-width {
+            padding: 20px!important;
+        }
+        .btn-1 {
+            max-width: 90px!important;
+        }
+        .btn-2 {
+            float: left!important;
+        }
+        #save {
+            margin-top: 30px!important;
+        }
+        .qrcode1 {
+            float: right;
+            width: 200px;
+            height: 200px;
+        }
+        .qrcode2 {
+            float: right;
+            width: 200px;
+            height: 200px;
+            opacity: 0.3;
+        }
+        @media (max-width: 991.98px) { 
+            #qrcode-cap1 {
+                margin-top: 200px;
+                margin-left: -210px;
+            }
+    
+            #qrcode-cap2 {
+                margin-top: 10px;
+                margin-left: -230px;
+                width: 300px;
+                text-align: justify;
+            }
+    
+            .qrcode-cap3  {
+                margin-left: -230px !important;
+            }
+        }
+    </style>
+    
+    <script lang="ts">
+    import { defineComponent, ref } from 'vue'
+    import Footer from '../components/Footer.vue';
+    import jQuery from 'jquery';
+    import axios from 'axios';
+    
+    const selectedFile = ref<File | null>(null);
+    
+    const api = axios.create({
+        baseURL: "https://127.0.0.1:8000",
+        headers: {'Accept': 'application/json',
+                  'Content-Type': 'application/json'}
+    })
+    
+    export default defineComponent({
+        name: 'Profile-Page',
+        components: {
+            Footer,
+        },
+        data() {
+            return {
+                userid: '',
+                token: '',
+                firstname: '',
+                lastname: '',
+                email: '',
+                mobile: '',
+                password: '',
+                confpassword: '',
+                qrcodeurl: '',
+                profileMsg: '',
+                profilepic: "",
+                chgPwd: false,
+                chkMfa: false,
+                showSave: false,
+            }
+        },
+        mounted(){
+            const _usrid = sessionStorage.getItem('USERID');
+            if (_usrid) {
+                this.userid = _usrid
+            }
+            const _token = sessionStorage.getItem("TOKEN");
+            if (_token) {
+                this.token = _token
+            }
+            this.profileMsg = "wait...retrieving profile...";
+            this.getUserprofile();
+        },
+        methods: {
+            getUserprofile: async function() {
+              await api.get(`/api/getuserid/${this.userid}`, { headers: {
+                Authorization: `Bearer ${this.token}`
+            }} )
+                .then((res: any) => {
+                        this.profileMsg = res.data.message;
+                        this.firstname = res.data.user[0].firstname;
+                        this.lastname = res.data.user[0].lastname;
+                        this.email = res.data.user[0].email;
+                        this.mobile = res.data.user[0].mobile;
+                        this.profilepic = res.data.user[0].userpic;
+                        if (res.data.user[0].qrcodeurl === null) {
+                            this.qrcodeurl = '/images/qrcode.png';
+                        } else {
+                            this.qrcodeurl = res.data.user[0].qrcodeurl;
+                        }
+                        setTimeout(() => {
+                            this.profileMsg = '';    
+                        }, 3000);
+                  }, (error: any) => {
+                        this.profileMsg = error.response.data.message;
+                        setTimeout(() => {
+                            this.profileMsg = '';    
+                        }, 3000);
+                });
+            },
+            submitProfile: function() {
+                const data =JSON.stringify({ lastname: this.lastname, 
+                    firstname: this.firstname, mobile: this.mobile });
+    
+                api.patch(`/api/updateuser/${this.userid}`, data, { headers: {
+                Authorization: `Bearer ${this.token}`
+                }} )
+                .then((res: any) => {
+                        this.profileMsg = res.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 3000);
+                        return;
+                  }, (error: any) => {
+                        this.profileMsg = error.response.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 3000);
+                        return;
+                });
+    
+            },
+            changePassword: function() {
+                if (this.password === '') {
+                    this.profileMsg = "Please enter New Password.";
+                    setTimeout(() => {
+                        this.profileMsg = '';
+                    }, 3000);
+                    return;
+                }
+                if (this.confpassword === '') {
+                    this.profileMsg = "Please confirm New Password.";
+                    setTimeout(() => {
+                        this.confpassword = '';
+                    }, 3000);
+                    return;
+                }
+                if (this.password != this.confpassword) {
+                    this.profileMsg = "New Password does not matched.";
+                    setTimeout(() => {
+                        this.profileMsg = '';
+                    }, 3000);
+                    return;
+                }
+                const data =JSON.stringify({ password: this.password });
+                api.patch(`/api/changeuserpassword/${this.userid}`, data, { headers: {
+                Authorization: `Bearer ${this.token}`
+                }} )
+                .then((res: any) => {
+                        this.profileMsg = res.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 3000);
+                  }, (error) => {
+                        this.profileMsg = error.response.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 3000);
+                        return;
+                });
+    
+    
+            },
+            changePicture: function(event: any) {
+                event.preventDefault();            
+                // const target = event.target as HTMLInputElement;
+                // if (target.files && target.files.length > 0) {
+                    // var pix = URL.createObjectURL(event.target.files[0]);
+
+                    // selectedFile.value = event.target.files[0];
+                // alert("stop");
+                // }
+                // alert("continue");
+    
+                // if (selectedFile.value) {
+                    // jQuery("#userpic").attr('src',URL.createObjectURL(event.target.files[0]));
+                    const formdata = new FormData();
+                    formdata.append('id', this.userid);
+                    formdata.append('userpic', event.target.files[0]);
+    
+                    api.post("/api/uploadpicture", formdata, { headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${this.token}`
+                    }} )
+                    .then((res: any) => {
+                        this.profileMsg = res.data.message;
+                        setTimeout(() => {
+                            // sessionStorage.setItem('USERPIC',res.data.userpic);
+                            this.profileMsg = '';
+                            this.profilepic = res.data.userpic;
+                            location.reload();
+                        }, 3000);
+                    }, (error: any) => {
+                            this.profileMsg = error.response.data.message;
+                            window.setTimeout(() => {
+                                this.profileMsg = '';
+                            }, 3000);
+                            return;
+                    });
+            //   } //end-selectedFile
+    
+    
+            },
+            checkboxPassword: function() {
+                if (this.chgPwd) {
+                    jQuery("#cpwd").show();
+                    jQuery("#mfa1").hide();  
+                    jQuery("#mfa2").hide();  
+                    this.chgPwd = true;
+                    this.chkMfa = false;
+                    this.showSave = true;
+                    // $('#chkMfa').prop('checked', false);
+                } else {
+                    this.password = '';
+                    this.confpassword = '';
+                    this.showSave = false;
+                    this.chgPwd = false;
+                    jQuery("#cpwd").hide();
+                }
+            },
+            checkboxMFA: function() {
+                if (this.chkMfa) {
+                    jQuery("#cpwd").hide();
+                    jQuery("#mfa1").show();
+                    jQuery("#mfa2").show();
+                    this.chgPwd = false;
+                    this.showSave = true;
+                    if (this.qrcodeurl === '') {
+                        this.qrcodeurl = '/images/qrcode.png';
+                    } 
+                    // $('#chkPwd').prop('checked', false);
+                } else {
+                    jQuery("#mfa1").hide();  
+                    jQuery("#mfa2").hide();                  
+                    this.showSave = false;
+                }
+            },
+            enableMFA: function() {
+                const data =JSON.stringify({ Twofactorenabled: true });
+                api.patch("/api/enablemfa/" + this.userid, data, { headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${this.token}`
+                }})
+                .then((res: any) => {
+                        // alert(res.data.qrcode);
+                        this.qrcodeurl = res.data.qrcodeurl;
+                        this.profileMsg = res.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 3000);
+                  }, (error) => {
+                        this.profileMsg = error.response.data.message;
+                        // window.setTimeout(() => {
+                        //     this.profileMsg = '';
+                        // }, 3000);
+                });
+            },
+            disableMFA: function() {
+                const data =JSON.stringify({ Twofactorenabled: false });
+                api.patch("/api/enablemfa/" + this.userid, data, { headers: {
+                    Authorization: `Bearer ${this.token}`
+                }} )
+                .then((res: any) => {
+                        this.qrcodeurl = '/images/qrcode.png';
+                        this.profileMsg = res.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 600);
+                  }, (error) => {
+                        this.profileMsg = error.response.data.message;
+                        window.setTimeout(() => {
+                            this.profileMsg = '';
+                        }, 3000);
+                });
+    
+            },
+    
+        }
+    
+    })
+    </script>
+    

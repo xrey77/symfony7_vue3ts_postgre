@@ -6,6 +6,22 @@
 parameters:
 
 services:
+    App\EventListener\JWTInvalidListener:
+            tags: ['kernel.event_subscriber']
+
+    App\Controller\UserController:
+        # if your controller is not autowired by default
+        # or if you want to be explicit
+        autowire: true
+        public: true # adjust visibility as needed
+        arguments:
+            # Explicitly alias the interface to the concrete service provided by the bundle
+            '$totpAuthenticator': '@scheb_two_factor.security.totp_authenticator'
+
+    Scheb\TwoFactorBundle\Security\TwoFactor\Provider\TwoFactorProviderRegistry: '@scheb_two_factor.provider_registry'
+
+
+
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.

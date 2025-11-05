@@ -1,0 +1,15 @@
+{
+    "extends": "@vue/tsconfig/tsconfig.json",
+    "compilerOptions": {
+      "isolatedModules": true,
+      "sourceMap": true,
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./assets/*"]
+      }
+    },
+    "include": [
+      "assets/**/*"
+    ]
+  }
+  

@@ -1,0 +1,45 @@
+{
+    "name": "symfony7_vue3ts_postgre",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Symfony 7 + Vite-Vue + Postgre Proj",
+    "license": "UNLICENSED",
+    "author": "Reynald Marquez-Gragasin",
+    "type": "commonjs",
+    "main": "webpack.config.js",
+    "directories": {
+        "test": "tests"
+    },
+    "scripts": {
+        "dev-server": "encore dev-server",
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production --progress"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.17.0",
+        "@babel/preset-env": "^7.16.0",
+        "@symfony/webpack-encore": "^5.0.0",
+        "core-js": "^3.38.0",
+        "regenerator-runtime": "^0.13.9",
+        "sass-loader": "^16.0.6",
+        "webpack": "^5.74.0",
+        "webpack-cli": "^5.1.0"
+    },
+    "dependencies": {
+        "@popperjs/core": "^2.11.8",
+        "@symfony/ux-vue": "^2.30.0",
+        "@types/axios": "^0.9.36",
+        "@types/jquery": "^3.5.33",
+        "@types/node": "^24.9.1",
+        "@vue/tsconfig": "^0.8.1",
+        "axios": "^1.13.2",
+        "bootstrap": "^5.3.8",
+        "jquery": "^3.7.1",
+        "ts-loader": "^9.5.4",
+        "typescript": "^5.9.3",
+        "vue": "^3.5.22",
+        "vue-loader": "^17.4.2",
+        "vue-router": "^4.6.3"
+    }
+}
